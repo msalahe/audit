@@ -6,39 +6,62 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable
+class User extends Authenticatable  implements JWTSubject
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
+    protected  $fillable = [
+        'full_name',
+        'email'
     ];
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($post) {
+            $post->{$post->getKeyName()} = (string) Str::uuid();
+        });
+    }
+
+
+    public function getIncrementing()
+    {
+        return false;
+    }
+
+    public function getKeyType()
+    {
+        return 'string';
+    }
+
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Return a key value array, containing any custom claims to be added to the JWT.
      *
-     * @var array<int, string>
+     * @return array
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    public function getJWTCustomClaims()
+    {
+ 
+            return [
+                'role' => $this->role
+            ];
+    }
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
+    public function findForPassport($identifier)
+    {
+        return $this->where('email', $identifier)->first();
+    }
+
+   
 }
