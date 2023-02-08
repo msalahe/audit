@@ -20,6 +20,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::controller(AuthController::class)->group(function () {
     Route::post('login', 'login');
-    Route::post('refresh', 'refresh');
-
+    Route::middleware('jwt.auth')->group(function () {
+        Route::post('refresh', 'refresh');
+    });
 });

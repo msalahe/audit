@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use JWTAuth;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\Validator;
+
 class AuthController extends Controller
 {
     public function __construct()
     {
+        $this->middleware('auth:api', ['except' => ['login','register']]);
     }
 
     public function login(Request $request)
@@ -21,8 +21,6 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('email','=',  $request->only('email'))->first();
-        $userToken= \JWTAuth::fromUser($user);
-  var_dump($userToken);
 
         if (!$user) {
             return response()->json([
@@ -31,11 +29,14 @@ class AuthController extends Controller
             ], 401);
         }
 
+        //$userToken=JWTAuth::fromUser($user);
+        $userToken=auth()->login($user);
+
         return response()->json([
                 'status' => 'success',
                 'user' => $user,
                 'authorisation' => [
-                    'token' => "",
+                    'token' => "$userToken",
                     'type' => 'bearer',
                 ]
             ]);
@@ -43,14 +44,13 @@ class AuthController extends Controller
     }
 
 
-
     public function refresh()
     {
         return response()->json([
             'status' => 'success',
-            'user' => Auth::user(),
+            'user' => auth()->user(),
             'authorisation' => [
-                'token' => Auth::refresh(),
+                'token' => auth()->refresh(),
                 'type' => 'bearer',
             ]
         ]);
